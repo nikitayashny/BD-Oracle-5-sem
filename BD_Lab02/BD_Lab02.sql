@@ -1,0 +1,121 @@
+ALTER SESSION SET CONTAINER = XEPDB1;
+
+--1
+CREATE TABLESPACE TS_YNS
+    DATAFILE 'TS_YNS2.dbf'
+    SIZE 7M
+    AUTOEXTEND ON
+    NEXT 5M
+    MAXSIZE 20M;
+    
+--2
+CREATE TEMPORARY TABLESPACE TS_YNS_TEMP
+    TEMPFILE 'TS_YNS_TEMP2.dbf'
+    SIZE 5M
+    AUTOEXTEND ON
+    NEXT 3M
+    MAXSIZE 30M;
+    
+--3
+SELECT tablespace_name
+    FROM dba_tablespaces;
+   
+--4    
+CREATE ROLE RL_YNSCORE;
+GRANT CREATE SESSION TO RL_YNSCORE; --разрешение на соединение с сервером
+GRANT CREATE TABLE TO RL_YNSCORE;  
+GRANT DROP ANY TABLE TO RL_YNSCORE;    
+GRANT CREATE VIEW TO RL_YNSCORE;
+GRANT DROP ANY VIEW TO RL_YNSCORE;
+GRANT CREATE PROCEDURE TO RL_YNSCORE;
+GRANT DROP ANY PROCEDURE TO RL_YNSCORE;
+
+--5
+SELECT ROLE
+    FROM dba_roles
+        WHERE ROLE = 'RL_YNSCORE';
+
+SELECT PRIVILEGE
+    FROM dba_sys_privs
+        WHERE grantee = 'RL_YNSCORE';
+       
+--6 
+CREATE PROFILE PF_YNSCORE LIMIT
+    PASSWORD_LIFE_TIME 180  -- количество дней жизни пароля
+    SESSIONS_PER_USER 3 -- количество сессий для пользователя
+    FAILED_LOGIN_ATTEMPTS 7 -- количество попыток входа
+    PASSWORD_LOCK_TIME 1    -- количество дней блокирования после ошибок
+    PASSWORD_REUSE_TIME 10  -- через сколько дней можно повторить пароль
+    PASSWORD_GRACE_TIME DEFAULT -- количество дней предупреждений о смене пароля
+    CONNECT_TIME 180    -- время соединения, минут
+    IDLE_TIME 30;    -- количество минут простоя
+  
+--7  
+SELECT profile
+    FROM dba_profiles;
+
+SELECT *
+    FROM dba_profiles
+        WHERE profile = 'PF_YNSCORE';
+
+SELECT *
+    FROM dba_profiles
+        WHERE profile = 'DEFAULT';
+        
+--8
+CREATE USER YNSCORE
+    IDENTIFIED BY 1111
+    DEFAULT TABLESPACE TS_YNS
+    TEMPORARY TABLESPACE TS_YNS_TEMP
+    PROFILE PF_YNSCORE
+    ACCOUNT UNLOCK
+    PASSWORD EXPIRE;
+
+GRANT RL_YNSCORE TO YNSCORE;
+
+GRANT CREATE TABLESPACE TO RL_YNSCORE;  -- для 11 задания
+--GRANT ALTER TABLESPACE TO YNSCORE;
+--GRANT CREATE ANY DIRECTORY TO YNSCORE;
+--GRANT ADMINISTER DATABASE TRIGGER TO YNSCORE;
+--GRANT READ, WRITE ON DIRECTORY DATA_PUMP_DIR TO YNSCORE;
+--GRANT RESOURCE TO YNSCORE;
+--GRANT UNLIMITED TABLESPACE TO YNSCORE;
+
+
+--REVOKE CREATE TABLESPACE
+--   FROM YNSCORE;
+
+--10
+CREATE TABLE employees (
+  employee_id NUMBER,
+  first_name VARCHAR2(50),
+  last_name VARCHAR2(50),
+  hire_date DATE,
+  salary NUMBER
+);
+
+CREATE VIEW employee_names AS
+    SELECT first_name || ' ' || last_name AS full_name
+        FROM employees;
+
+--11
+CREATE TABLESPACE YNS_QDATA 
+    DATAFILE 'YNS_QDATA18.dbf' SIZE 10M OFFLINE;
+
+ALTER TABLESPACE YNS_QDATA ONLINE;
+
+CREATE TABLE TABLE_TASK11 (
+    id INT,
+    name VARCHAR(50)
+)
+TABLESPACE TS_YNS;
+
+INSERT INTO TABLE_TASK11 (id, name) VALUES (1, 'Nikita');
+INSERT INTO TABLE_TASK11 (id, name) VALUES (2, 'Maxim');
+INSERT INTO TABLE_TASK11 (id, name) VALUES (3, 'Andrew');
+commit;
+       
+SELECT * FROM TABLE_TASK11
+
+
+
